@@ -1,7 +1,7 @@
 [project]
 name = "speed-to-lead"
 version = "0.1.0"
-description = "Website form → CRM (HubSpot, Salesforce) in seconds, with retries, dedupe and timing."
+description = "Website form to HubSpot or Salesforce in seconds, with dedupe, retries and timing."
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.110",
