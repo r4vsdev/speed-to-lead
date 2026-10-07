@@ -20,6 +20,10 @@ def make_crm(name: str, store: Store) -> CRM:
     if name == "hubspot":
         from .crm.hubspot import HubSpot
         return HubSpot(os.environ["HUBSPOT_TOKEN"], store=store)
+    if name == "salesforce":
+        from .crm.salesforce import Salesforce
+        return Salesforce(os.environ["SALESFORCE_INSTANCE_URL"], os.environ["SALESFORCE_CLIENT_ID"],
+                          os.environ["SALESFORCE_CLIENT_SECRET"], store=store)
     if name == "dryrun":
         from .crm.fake import FakeCRM
         return FakeCRM()
