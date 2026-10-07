@@ -3,7 +3,7 @@ import pytest
 import respx
 from fastapi.testclient import TestClient
 
-from speed_to_lead.app import create_app
+from speed_to_lead.app import RateLimiter, create_app
 from speed_to_lead.crm import sync_lead
 from speed_to_lead.crm.fake import FakeCRM
 from speed_to_lead.http import ApiError, request
@@ -94,13 +94,13 @@ class Boom(FakeCRM):
         raise RuntimeError("CRM down")
 
 
-def make(crm=None, secret=""):
+def make(crm=None, secret="", **kw):
     store = Store(":memory:")
     alerts = []
     notifier = Notifier()
     notifier.send = alerts.append
     crm = crm or FakeCRM()
-    return TestClient(create_app(crm, store, notifier, secret)), store, crm, alerts
+    return TestClient(create_app(crm, store, notifier, secret, **kw)), store, crm, alerts
 
 
 def test_webhook_syncs_and_times_the_lead():
@@ -125,6 +125,44 @@ def test_secret_required_when_set():
     client, *_ = make(secret="s3cret")
     assert client.post("/leads", json=LEAD).status_code == 401
     assert client.post("/leads", json=LEAD, headers={"X-Webhook-Secret": "s3cret"}).status_code == 202
+
+
+def test_lead_details_and_stats_need_the_secret():
+    client, *_ = make(secret="s3cret")
+    ok = {"X-Webhook-Secret": "s3cret"}
+    client.post("/leads", json=LEAD, headers=ok)
+    assert client.get("/leads/sub:form-1").status_code == 401
+    assert client.get("/stats").status_code == 401
+    assert client.get("/leads/sub:form-1", headers=ok).json()["status"] == "done"
+    assert client.get("/health").json() == {"ok": True}  # no CRM name or data leaked
+
+
+def test_real_crm_refuses_to_start_without_secret():
+    class Real(FakeCRM):
+        name = "hubspot"
+    with pytest.raises(RuntimeError):
+        make(crm=Real(), secret="")
+
+
+def test_rate_limit_blocks_floods_and_secret_guessing():
+    client, *_ = make(secret="s3cret", rate_limit=2)
+    codes = [client.post("/leads", json={**LEAD, "submission_id": str(i)}, headers={"X-Webhook-Secret": "guess"}).status_code
+             for i in range(3)]
+    assert codes == [401, 401, 429]
+
+
+def test_rate_limiter_window_expires():
+    now = [0.0]
+    rl = RateLimiter(1, window=60, clock=lambda: now[0])
+    assert rl.allow("ip") and not rl.allow("ip")
+    now[0] = 61
+    assert rl.allow("ip")
+
+
+def test_api_docs_are_not_exposed():
+    client, *_ = make()
+    assert client.get("/docs").status_code == 404
+    assert client.get("/openapi.json").status_code == 404
 
 
 def test_invalid_email_rejected():

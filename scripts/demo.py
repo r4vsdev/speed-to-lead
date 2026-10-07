@@ -41,11 +41,11 @@ with httpx.Client(timeout=30) as c:
     deadline = time.time() + 60
     for key in keys:
         while True:
-            row = c.get(f"{BASE}/leads/{key}").json()
+            row = c.get(f"{BASE}/leads/{key}", headers=HEADERS).json()
             if row["status"] != "processing" or time.time() > deadline:
                 break
             time.sleep(0.5)
         print(f"{key}: {row['status']} in {row['ms']} ms · contact {row['contact_id']} "
               f"(new={bool(row['contact_created'])}) · company {row['company_id']} · deal {row['deal_id']}"
               f"{' · ' + row['error'] if row['error'] else ''}")
-    print("stats:", c.get(f"{BASE}/stats").json())
+    print("stats:", c.get(f"{BASE}/stats", headers=HEADERS).json())
