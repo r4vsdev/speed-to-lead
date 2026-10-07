@@ -68,6 +68,13 @@ python scripts/demo.py      # sends 3 demo leads and prints the timings
 HubSpot: a service key with `crm.objects.{contacts,companies,deals}.read/write`.
 Salesforce: an External Client App with the OAuth client credentials flow and the `api` scope.
 
+## Same flow in Zapier and Make
+
+Also built on the free plans of Zapier (Google Forms → HubSpot → Slack) and Make (webhook → HubSpot → Slack),
+with screenshots, the Make blueprint and when I'd pick each tool: [docs/no-code-versions.md](docs/no-code-versions.md).
+
+![Slack alerts from Zapier and Make](docs/slack-alerts-zapier-and-make.png)
+
 ## Why I built it
 
 I've built this kind of flow in n8n before. For lead and money flows I prefer code: I learned test-driven development
