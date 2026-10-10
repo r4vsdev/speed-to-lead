@@ -45,9 +45,13 @@ class Notifier:
             return False
 
 
+CRM_LABELS = {"hubspot": "HubSpot", "salesforce": "Salesforce", "dryrun": "dry run"}
+
+
 def lead_blocks(*, who: str, company: str, crm: str, crm_ms: int, q, link: str = "") -> list:
     """Slack Block Kit message for a qualified lead. All form-derived text is escaped."""
     s, e, o = q.score, q.enrichment, q.owner
+    crm = CRM_LABELS.get(crm, crm)
     icon = {"A": "🔥", "B": "👍", "C": "🧊", "spam": "🚫"}[s.grade]
     title = f"{icon} *{slack_escape(who)}*" + (f" · {slack_escape(company)}" if company else "")
     owner = o.slack or slack_escape(o.name)  # o.slack is a mention from our own config, not from the form

@@ -24,7 +24,8 @@ Website form ──POST /leads──▶ speed-to-lead
 
 ## Enrich, score, route (v2)
 
-Run on the real HubSpot account with a local AI model (Ollama, `qwen3:8b`), Oct 2026:
+Run on the real HubSpot account with a local AI model (Ollama, `qwen3:8b`), Oct 2026. Scoring times are with the
+model already loaded; a cold start (model loading into memory) adds ~15 s once, the CRM write is unaffected:
 
 | Demo lead | In HubSpot | Scored and routed | Result |
 |---|---|---|---|
@@ -42,6 +43,8 @@ Why: +15 work email; +10 company website is live; +20 message asks to buy or tal
 Website: PostHog automatically diagnoses problems, fixes bugs, and generates pull requests…
 AI: software · product analytics platform · intent high. Requesting demo and pricing urgently…
 ```
+
+![Scored Slack alerts](docs/slack-scored-alerts.png)
 
 - **Score = rules + AI.** Points a sales manager can read and change, not a black box. The AI adds industry and
   intent; the rules have the last word. The SEO pitch above was rated "medium intent" by the AI and still flagged
