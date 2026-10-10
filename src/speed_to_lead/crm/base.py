@@ -32,6 +32,12 @@ class CRM(Protocol):
     def add_note(self, lead: Lead, contact_id: str, deal_id: str) -> None:
         """Save the form message on the contact and deal."""
 
+    def record_qualification(self, result: "SyncResult", q) -> None:
+        """Save score, reasons and enrichment as a note; give the contact and deal to the routed owner."""
+
+    def record_url(self, result: "SyncResult") -> str:
+        """Link to the deal for the sales rep ('' if unknown)."""
+
 
 def sync_lead(lead: Lead, crm: CRM) -> SyncResult:
     # Contact first: it is the write most likely to be rejected (e.g. an email the CRM won't accept),

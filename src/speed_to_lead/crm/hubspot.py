@@ -23,7 +23,8 @@ class HubSpot:
     name = "hubspot"
 
     def __init__(self, token: str, *, pipeline: str = "default", stage: str = "appointmentscheduled",
-                 client: httpx.Client | None = None, sleep=time.sleep, store=None):
+                 client: httpx.Client | None = None, sleep=time.sleep, store=None, portal_id: str = ""):
+        self.portal_id = portal_id  # only used to build links to records
         # store: remembers domain -> company id. HubSpot's search index lags a few seconds behind writes and
         # company domains aren't unique, so two leads from one company seconds apart would otherwise create two.
         self.store = store
@@ -96,6 +97,18 @@ class HubSpot:
                                "hs_timestamp": str(int(time.time() * 1000))},
                 "associations": [_assoc(contact_id, NOTE_TO_CONTACT), _assoc(deal_id, NOTE_TO_DEAL)]}
         self._call("POST", "/crm/v3/objects/notes", body)
+
+    def record_qualification(self, result, q) -> None:
+        if q.owner.hubspot_owner_id:
+            owner = {"properties": {"hubspot_owner_id": q.owner.hubspot_owner_id}}
+            self._call("PATCH", f"/crm/v3/objects/contacts/{result.contact_id}", owner)
+            self._call("PATCH", f"/crm/v3/objects/deals/{result.deal_id}", owner)
+        body = {"properties": {"hs_note_body": q.summary(), "hs_timestamp": str(int(time.time() * 1000))},
+                "associations": [_assoc(result.contact_id, NOTE_TO_CONTACT), _assoc(result.deal_id, NOTE_TO_DEAL)]}
+        self._call("POST", "/crm/v3/objects/notes", body)
+
+    def record_url(self, result) -> str:
+        return f"https://app.hubspot.com/contacts/{self.portal_id}/record/0-3/{result.deal_id}" if self.portal_id else ""
 
 
 def _assoc(to_id: str, type_id: int) -> dict:

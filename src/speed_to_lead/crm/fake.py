@@ -50,6 +50,13 @@ class FakeCRM:
     def add_note(self, lead: Lead, contact_id: str, deal_id: str) -> None:
         self.notes.append({"contact": contact_id, "deal": deal_id, "body": lead.message})
 
+    def record_qualification(self, result, q) -> None:
+        self.deals[result.deal_id]["owner"] = q.owner.name
+        self.notes.append({"contact": result.contact_id, "deal": result.deal_id, "body": q.summary()})
+
+    def record_url(self, result) -> str:
+        return ""
+
 
 def _contact_fields(lead: Lead) -> dict:
     return {

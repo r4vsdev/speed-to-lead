@@ -98,7 +98,7 @@ def make(crm=None, secret="", **kw):
     store = Store(":memory:")
     alerts = []
     notifier = Notifier()
-    notifier.send = alerts.append
+    notifier.send = lambda text, slack_blocks=None: alerts.append(text)
     crm = crm or FakeCRM()
     return TestClient(create_app(crm, store, notifier, secret, **kw)), store, crm, alerts
 

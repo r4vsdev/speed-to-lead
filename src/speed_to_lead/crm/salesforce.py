@@ -118,3 +118,16 @@ class Salesforce:
         self._call("POST", "/sobjects/Task", {
             "WhoId": contact_id, "WhatId": deal_id, "Subject": f"Form message ({lead.source})",
             "Description": lead.message, "Status": "Completed", "ActivityDate": date.today().isoformat()})
+
+    def record_qualification(self, result, q) -> None:
+        if q.owner.salesforce_user_id:
+            owner = {"OwnerId": q.owner.salesforce_user_id}
+            self._call("PATCH", f"/sobjects/Contact/{result.contact_id}", owner)
+            self._call("PATCH", f"/sobjects/Opportunity/{result.deal_id}", owner)
+        self._call("POST", "/sobjects/Task", {
+            "WhoId": result.contact_id, "WhatId": result.deal_id,
+            "Subject": f"Lead score {q.score.points} ({q.score.grade}) → {q.owner.name}"[:255],
+            "Description": q.summary(), "Status": "Completed", "ActivityDate": date.today().isoformat()})
+
+    def record_url(self, result) -> str:
+        return f"{self.instance_url}/lightning/r/Opportunity/{result.deal_id}/view"

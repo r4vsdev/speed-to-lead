@@ -17,13 +17,19 @@ HEADERS = {"X-Webhook-Secret": os.getenv("WEBHOOK_SECRET", "")}
 RUN = uuid.uuid4().hex[:6]
 
 LEADS = [
-    {"first_name": "Maya", "last_name": "Fernandes", "email": "maya.demo@example.com", "company": "Northwind (demo)",
-     "website": "example.com", "phone": "+1 555 0100", "message": "We need help routing inbound leads."},
-    {"first_name": "Leo", "last_name": "Park", "email": "leo.demo@example.org", "company": "Brightdesk (demo)",
-     "message": "Can you connect our Webflow forms to the CRM?"},
+    # Hot: work email, live website, asks for a demo this week → Account Executive
+    {"first_name": "Ines", "last_name": "Costa (demo)", "email": "ines.demo@example.com", "company": "PostHog (demo)",
+     "website": "posthog.com", "phone": "+1 555 0100",
+     "message": "We'd like a demo and pricing this week. Inbound leads wait hours before a rep sees them."},
+    # Vague, personal email → nurture
+    {"first_name": "Sam", "last_name": "Reyes (demo)", "email": "sam.demo.lead@gmail.com",
+     "message": "just curious how this works"},
+    # Vendor pitch → flagged as spam even if the AI rates it "medium"
+    {"first_name": "Pat", "last_name": "Vendor (demo)", "email": "pat.demo@example.net", "website": "example.net",
+     "message": "We offer SEO services and backlinks to rank your site, book a call http://x.test http://y.test"},
     # Same person as the first lead, new enquiry: contact and company must be reused, not duplicated
-    {"first_name": "Maya", "last_name": "Fernandes", "email": "maya.demo@example.com", "company": "Northwind (demo)",
-     "message": "Follow-up: also want a Slack alert."},
+    {"first_name": "Ines", "last_name": "Costa (demo)", "email": "ines.demo@example.com", "company": "PostHog (demo)",
+     "website": "posthog.com", "message": "Follow-up: we also want the alert in Slack."},
 ]
 
 with httpx.Client(timeout=30) as c:
@@ -38,14 +44,16 @@ with httpx.Client(timeout=30) as c:
     r = c.post(f"{BASE}/leads", json={**LEADS[0], "source": "demo", "submission_id": f"demo-{RUN}-0"}, headers=HEADERS)
     print("resend:", r.json()["status"])
 
-    deadline = time.time() + 60
+    deadline = time.time() + 120
     for key in keys:
         while True:
             row = c.get(f"{BASE}/leads/{key}", headers=HEADERS).json()
-            if row["status"] != "processing" or time.time() > deadline:
+            if (row["status"] == "failed" or row["grade"]) or time.time() > deadline:
                 break
             time.sleep(0.5)
         print(f"{key}: {row['status']} in {row['ms']} ms · contact {row['contact_id']} "
               f"(new={bool(row['contact_created'])}) · company {row['company_id']} · deal {row['deal_id']}"
               f"{' · ' + row['error'] if row['error'] else ''}")
+        print(f"   score {row['score']} ({row['grade']}) → {row['owner']} · industry {row['industry']} "
+              f"· scored and routed in {row['qualified_ms']} ms")
     print("stats:", c.get(f"{BASE}/stats", headers=HEADERS).json())

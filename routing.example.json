@@ -1,0 +1,64 @@
+{
+  "target_industries": [
+    "software",
+    "marketing agency",
+    "ecommerce",
+    "professional services"
+  ],
+  "owners": {
+    "ae": {
+      "name": "Maya (Account Executive)",
+      "hubspot_owner_id": "",
+      "salesforce_user_id": "",
+      "slack": "<@U0123ABCD>"
+    },
+    "sdr1": {
+      "name": "Leo (SDR)"
+    },
+    "sdr2": {
+      "name": "Ana (SDR)"
+    },
+    "nurture": {
+      "name": "Marketing nurture"
+    }
+  },
+  "rules": [
+    {
+      "when": {
+        "grade": [
+          "spam"
+        ]
+      },
+      "assign": "nurture"
+    },
+    {
+      "when": {
+        "min_score": 70
+      },
+      "assign": "ae"
+    },
+    {
+      "when": {
+        "industry": [
+          "healthcare",
+          "finance"
+        ]
+      },
+      "assign": "ae"
+    },
+    {
+      "when": {
+        "grade": [
+          "B"
+        ]
+      },
+      "assign": [
+        "sdr1",
+        "sdr2"
+      ]
+    },
+    {
+      "assign": "nurture"
+    }
+  ]
+}
