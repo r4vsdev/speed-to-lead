@@ -17,6 +17,7 @@ DEAL_TO_COMPANY = 5
 CONTACT_TO_COMPANY = 279
 NOTE_TO_CONTACT = 202
 NOTE_TO_DEAL = 214
+NOTE_TO_COMPANY = 190
 
 
 class HubSpot:
@@ -106,6 +107,14 @@ class HubSpot:
         body = {"properties": {"hs_note_body": q.summary(), "hs_timestamp": str(int(time.time() * 1000))},
                 "associations": [_assoc(result.contact_id, NOTE_TO_CONTACT), _assoc(result.deal_id, NOTE_TO_DEAL)]}
         self._call("POST", "/crm/v3/objects/notes", body)
+
+    def update_company(self, company_id: str, props: dict) -> None:
+        self._call("PATCH", f"/crm/v3/objects/companies/{company_id}", {"properties": props})
+
+    def add_company_note(self, company_id: str, body: str) -> None:
+        self._call("POST", "/crm/v3/objects/notes", {
+            "properties": {"hs_note_body": body, "hs_timestamp": str(int(time.time() * 1000))},
+            "associations": [_assoc(company_id, NOTE_TO_COMPANY)]})
 
     def record_url(self, result) -> str:
         return f"https://app.hubspot.com/contacts/{self.portal_id}/record/0-3/{result.deal_id}" if self.portal_id else ""

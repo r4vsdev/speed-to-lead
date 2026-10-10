@@ -67,6 +67,27 @@ No chart library; works on a phone and in dark mode.
 
 *Synthetic data from `scripts/seed_dashboard.py` (160 made-up leads, scored and routed by the real code).*
 
+## Outbound side: Clay ICP table → HubSpot
+
+Inbound leads are scored above; for target accounts I built an ICP (ideal customer profile) table in Clay
+(free plan, Oct 2026) and pushed it into the same HubSpot:
+
+| Clay column | How |
+|---|---|
+| Industry, employees, country, description, LinkedIn | Clay company enrichment from the domain |
+| Sells to (B2B/B2C), sales motion (self-serve / hybrid / sales-led), free plan, why fast lead response matters | Claygent (AI web research) on each company's site |
+| ICP score 0–100 and tier A/B/C | Formula: B2B, sales-assisted, 200–2,000 employees, software |
+
+![Clay ICP table](docs/clay-icp-table.png)
+
+Clay's free plan has no CRM sync, so the table goes out as CSV and `scripts/import_clay.py` pushes it with the same
+HubSpot adapter (dry run by default, `--write` to send): company by domain (reused if it exists), employees,
+country, LinkedIn, and a note with the score and the AI research. Reruns skip accounts already imported with the
+same score. 10 companies imported; ~30 Clay credits.
+
+**What went wrong first:** the AI column's prompt held `{{Domain}}` as plain text instead of a column reference, so
+Claygent "researched" a made-up company. Testing on one row before running all ten caught it (and saved credits).
+
 ## What it handles
 
 | Situation | Behaviour |
@@ -118,7 +139,7 @@ No chart library; works on a phone and in dark mode.
 ```bash
 python -m venv .venv && .venv/Scripts/pip install -e ".[dev]"   # Linux/macOS: .venv/bin/pip
 cp .env.example .env        # choose CRM=hubspot|salesforce|dryrun, add keys and a WEBHOOK_SECRET
-pytest -q                   # 55 tests, no network needed (APIs and the AI are mocked)
+pytest -q                   # 58 tests, no network needed (APIs and the AI are mocked)
 uvicorn speed_to_lead.app:main_app --factory --port 8000
 python scripts/demo.py      # sends 4 demo leads and prints timings, scores and owners
 python scripts/try_qualify.py         # score sample leads without any CRM

@@ -30,6 +30,12 @@ create table if not exists turns (   -- round-robin position per routing rule
   rule text primary key,
   n integer not null
 );
+create table if not exists clay_imports (   -- Clay CSV rows already pushed to the CRM
+  domain text primary key,
+  score integer not null,
+  company_id text not null,
+  imported_at real not null
+);
 """
 
 # Added in v2 (qualification). Older databases get them through ALTER TABLE on start.
@@ -84,6 +90,15 @@ class Store:
                 (q.score.points, q.score.grade, q.owner.name, q.enrichment.industry or None, int(q.enrichment.ai),
                  ms, json.dumps(q.score.reasons), key))
             return ms
+
+    def clay_imported(self, domain: str, score: int) -> bool:
+        row = self.db.execute("select score from clay_imports where domain = ?", (domain,)).fetchone()
+        return bool(row) and row["score"] == score
+
+    def mark_clay_imported(self, domain: str, score: int, company_id: str) -> None:
+        with self.lock, self.db:
+            self.db.execute("insert or replace into clay_imports values (?, ?, ?, ?)",
+                            (domain, score, company_id, time.time()))
 
     def next_turn(self, rule: str) -> int:
         """0, 1, 2... per rule, kept across restarts so round-robin stays fair."""
